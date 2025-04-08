@@ -1,189 +1,151 @@
+// ✅ Always at the top of the file
 import React, { useState } from 'react';
-import { DndProvider, useDrag, useDrop } from 'react-dnd';
-import { HTML5Backend } from 'react-dnd-html5-backend';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import { Bar } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  BarElement,
+  CategoryScale,
+  LinearScale,
+  Tooltip,
+  Legend
+} from 'chart.js';
+import html2pdf from 'html2pdf.js';
+import Papa from 'papaparse';
 
-const WIDGET_TYPES = {
-  TEXT: 'text',
-  KPI: 'kpi',
-};
+ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
-const DraggableWidget = ({ type, label }) => {
-  const [, drag] = useDrag(() => ({
-    type: 'WIDGET',
-    item: { type },
-  }));
 
-  return (
-    <div
-      ref={drag}
-      style={{
-        padding: '0.5rem',
-        border: '1px dashed #999',
-        margin: '0.5rem 0',
-        cursor: 'grab',
-      }}
-    >
-      {label}
-    </div>
-  );
-};
+const CreateDashboard = () => {
+  const [dashboardName, setDashboardName] = useState('Interactive Dashboard');
+  const [widgets, setWidgets] = useState([]);
 
-const WidgetPalette = () => {
-  return (
-    <div style={{ borderRight: '1px solid #ccc', paddingRight: '1rem' }}>
-      <h3>📦 Widgets</h3>
-      <DraggableWidget type={WIDGET_TYPES.TEXT} label="Text Box" />
-      <DraggableWidget type={WIDGET_TYPES.KPI} label="KPI Widget" />
-    </div>
-  );
-};
-
-const DashboardCanvas = ({ widgets, addWidget }) => {
-  const [, drop] = useDrop(() => ({
-    accept: 'WIDGET',
-    drop: (item) => addWidget(item.type),
-  }));
-
-  return (
-    <div
-      ref={drop}
-      style={{
-        flex: 1,
-        minHeight: '300px',
-        border: '2px dashed #ccc',
-        padding: '1rem',
-        backgroundColor: '#f9fafb',
-      }}
-    >
-      <h3>🧠 Drag Widgets Here</h3>
-      {widgets.map((w, idx) => (
-        <div
-          key={idx}
-          style={{
-            padding: '1rem',
-            background: '#fff',
-            marginBottom: '1rem',
-            borderRadius: '0.5rem',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-          }}
-        >
-          {w.type === WIDGET_TYPES.TEXT && <p>This is a text widget.</p>}
-          {w.type === WIDGET_TYPES.KPI && <h2>📈 1234</h2>}
-        </div>
-      ))}
-    </div>
-  );
-};
-
-const CreateDashboard = ({ initialName = '', initialWidgets = [], editId = null }) => {
-  const [widgets, setWidgets] = useState(initialWidgets);
-  const [dashboardName, setDashboardName] = useState(initialName);
-
-  const templates = {
-    'Marketing Overview': {
-      widgets: [{ type: 'text' }, { type: 'kpi' }],
-      thumbnail: 'https://via.placeholder.com/120x60?text=Marketing',
-    },
-    'Sales Performance': {
-      widgets: [{ type: 'kpi' }, { type: 'kpi' }],
-      thumbnail: 'https://via.placeholder.com/120x60?text=Sales',
-    },
-  };
-
-  const addWidget = (type) => {
-    setWidgets([...widgets, { type }]);
-  };
-
-  const handleSave = () => {
-    if (!dashboardName.trim()) {
-      alert('Please enter a dashboard name');
-      return;
-    }
-
-    const newDashboard = {
-      id: editId || Date.now(),
-      name: dashboardName,
-      widgets,
+  const handleAddWidget = (type) => {
+    const newWidget = {
+      id: Date.now().toString(),
+      type,
+      content: type === 'text' ? 'Edit this text' : type === 'kpi' ? '12345' : null
     };
+    setWidgets([...widgets, newWidget]);
+  };
 
-    let saved = JSON.parse(localStorage.getItem('dashboards') || '[]');
+  const handleDelete = (id) => {
+    setWidgets(widgets.filter(w => w.id !== id));
+  };
 
-    if (editId) {
-      saved = saved.map((d) => (d.id === editId ? newDashboard : d));
-    } else {
-      saved.push(newDashboard);
-    }
+  const handleChange = (id, value) => {
+    setWidgets(widgets.map(w => w.id === id ? { ...w, content: value } : w));
+  };
 
-    localStorage.setItem('dashboards', JSON.stringify(saved));
+  const onDragEnd = (result) => {
+    if (!result.destination) return;
+    const items = Array.from(widgets);
+    const [reordered] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reordered);
+    setWidgets(items);
+  };
 
-    alert(`✅ Dashboard "${dashboardName}" saved!`);
+  
+// Add inside CreateDashboard component
 
-    setDashboardName('');
-    setWidgets([]);
+const exportCSV = () => {
+  const csv = Papa.unparse(widgets.map(w => ({
+    type: w.type,
+    content: w.content || '',
+  })));
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `${dashboardName || 'dashboard'}.csv`;
+  link.click();
+};
+
+const exportPDF = () => {
+  const element = document.getElementById('dashboard-canvas');
+  html2pdf().from(element).save(`${dashboardName || 'dashboard'}.pdf`);
+};
+
+const chartData = {
+    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
+    datasets: [{
+      label: 'Revenue',
+      data: [1200, 1900, 3000, 2500, 2100],
+      backgroundColor: '#6366f1',
+    }],
   };
 
   return (
-    <DndProvider backend={HTML5Backend}>
-      <div style={{ padding: '2rem' }}>
-        <h2>Create a New Dashboard</h2>
+    <div className="max-w-4xl mx-auto p-6">
+      <h1 className="text-3xl font-bold mb-6">🧩 Dashboard Builder</h1>
 
-        {/* Template Dropdown */}
-        <div style={{ marginBottom: '1rem' }}>
-          <label htmlFor="template-select">📁 Choose Template: </label>
-          <select
-            id="template-select"
-            onChange={(e) => {
-              const selected = templates[e.target.value];
-              if (selected) {
-                setWidgets(selected.widgets);
-                setDashboardName(e.target.value);
-              }
-            }}
-          >
-            <option value="">-- Select Template --</option>
-            {Object.keys(templates).map((name) => (
-              <option key={name} value={name}>
-                {name}
-              </option>
-            ))}
-          </select>
+      <input
+        className="w-full p-2 mb-4 border rounded-lg text-xl font-medium"
+        value={dashboardName}
+        onChange={(e) => setDashboardName(e.target.value)}
+      />
 
-          {/* Template Thumbnails */}
-          <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
-            {Object.entries(templates).map(([name, data]) => (
-              <div key={name} style={{ textAlign: 'center' }}>
-                <img
-                  src={data.thumbnail}
-                  alt={name}
-                  style={{ width: '120px', height: '60px', border: '1px solid #ccc' }}
-                />
-                <div style={{ fontSize: '0.8rem' }}>{name}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Name + Save */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-          <input
-            type="text"
-            value={dashboardName}
-            onChange={(e) => setDashboardName(e.target.value)}
-            placeholder="Enter dashboard name"
-            style={{ padding: '0.5rem', fontSize: '1rem', flex: '1' }}
-          />
-          <button onClick={handleSave} style={{ padding: '0.5rem 1rem' }}>
-            Save Dashboard
-          </button>
-        </div>
-
-        {/* Builder */}
-        <div style={{ display: 'flex', gap: '2rem' }}>
-          <WidgetPalette />
-          <DashboardCanvas widgets={widgets} addWidget={addWidget} />
-        </div>
+      <div className="mb-6 flex gap-3">
+        <button onClick={() => handleAddWidget('text')} className="bg-blue-500 text-white px-4 py-2 rounded shadow">➕ Text</button>
+        <button onClick={() => handleAddWidget('kpi')} className="bg-green-500 text-white px-4 py-2 rounded shadow">➕ KPI</button>
+        <button onClick={() => handleAddWidget('chart')} className="bg-purple-500 text-white px-4 py-2 rounded shadow">➕ Chart</button>
       </div>
-    </DndProvider>
+
+      <DragDropContext onDragEnd={onDragEnd}>
+        <Droppable droppableId="canvas">
+          {(provided) => (
+            <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-4">
+              {widgets.map((widget, index) => (
+                <Draggable key={widget.id} draggableId={widget.id} index={index}>
+                  {(provided) => (
+                    <div
+                      className="bg-white border rounded-xl p-4 shadow-sm flex flex-col gap-2"
+                      ref={provided.innerRef}
+                      {...provided.draggableProps}
+                      {...provided.dragHandleProps}
+                    >
+                      <div className="flex justify-between items-center">
+                        <p className="text-sm text-gray-500 uppercase">{widget.type}</p>
+                        <button onClick={() => handleDelete(widget.id)} className="text-red-500 hover:underline text-sm">Delete</button>
+                      </div>
+
+                      {widget.type === 'text' && (
+                        <textarea
+                          className="w-full border rounded p-2"
+                          value={widget.content}
+                          onChange={(e) => handleChange(widget.id, e.target.value)}
+                        />
+                      )}
+
+                      {widget.type === 'kpi' && (
+                        <input
+                          type="text"
+                          className="text-2xl font-bold text-green-600 p-2 border rounded w-full"
+                          value={widget.content}
+                          onChange={(e) => handleChange(widget.id, e.target.value)}
+                        />
+                      )}
+
+                      {widget.type === 'chart' && (
+                        <div className="h-64">
+                          <Bar data={chartData} />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </Draggable>
+              ))}
+              {provided.placeholder}
+            </div>
+          )}
+        </Droppable>
+      
+<div className="mt-6 flex gap-3">
+  <button onClick={exportCSV} className="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700">⬇ Export CSV</button>
+  <button onClick={exportPDF} className="bg-gray-700 text-white px-4 py-2 rounded shadow hover:bg-gray-800">📄 Export PDF</button>
+</div>
+
+</DragDropContext>
+    </div>
   );
 };
 

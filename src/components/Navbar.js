@@ -1,13 +1,24 @@
-import React, { useState } from 'react';
-import './Navbar.css';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import './Navbar.css';
 
 const Navbar = () => {
   const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 50);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   return (
-    <nav className="navbar">
-      <Link to="/" className="logo">🚀 DashIT</Link>
+    <nav className={`navbar ${scrolled ? 'navbar-scrolled' : ''}`}>
+      <Link to="/" className="logo">
+        <span className="dash">Dash</span><span className="it">IT</span>
+      </Link>
 
       <div className="hamburger" onClick={() => setOpen(!open)}>
         ☰

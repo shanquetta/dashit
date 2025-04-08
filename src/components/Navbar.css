@@ -1,68 +1,93 @@
 .navbar {
-    position: sticky;
-    top: 0;
-    z-index: 1000;
-    background-color: #0f172a;
-    color: white;
-    padding: 1rem 2rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  
-  .logo {
-    font-size: 1.5rem;
-    font-weight: bold;
-    text-decoration: none;
-    color: white;
-  }
-  
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background-color: #0f172a;
+  color: white;
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.3s ease;
+}
+
+.navbar-scrolled {
+  background-color: #1e293b;
+  padding: 0.5rem 2rem;
+  opacity: 0.95;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+}
+
+.logo {
+  font-size: 1.8rem;
+  font-weight: 700;
+  font-family: 'Inter', sans-serif;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  transition: transform 0.3s ease;
+}
+
+.logo:hover {
+  transform: scale(1.05);
+}
+
+.logo .dash {
+  color: #38bdf8;
+}
+
+.logo .it {
+  color: #facc15;
+  background: #fff;
+  padding: 0 0.25rem;
+  border-radius: 0.25rem;
+}
+
+.hamburger {
+  display: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+.nav-links {
+  display: flex;
+  list-style: none;
+  gap: 1.5rem;
+}
+
+.nav-links a {
+  color: white;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.nav-links a:hover {
+  color: #38bdf8;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
   .hamburger {
-    display: none;
-    font-size: 1.5rem;
-    cursor: pointer;
+    display: block;
   }
-  
+
   .nav-links {
+    position: absolute;
+    top: 60px;
+    right: 0;
+    flex-direction: column;
+    background: #0f172a;
+    width: 100%;
+    padding: 1rem 2rem;
+    display: none;
+  }
+
+  .nav-links.active {
     display: flex;
-    list-style: none;
-    gap: 1.5rem;
   }
-  
-  .nav-links a {
-    text-decoration: none;
-    color: white;
-    font-weight: 500;
+
+  .nav-links li {
+    margin-bottom: 1rem;
   }
-  
-  .nav-links a:hover {
-    color: #38bdf8;
-  }
-  
-  /* Responsive Menu */
-  @media (max-width: 768px) {
-    .hamburger {
-      display: block;
-    }
-  
-    .nav-links {
-      position: absolute;
-      top: 60px;
-      right: 0;
-      flex-direction: column;
-      background: #0f172a;
-      width: 100%;
-      text-align: right;
-      padding: 1rem 2rem;
-      display: none;
-    }
-  
-    .nav-links.active {
-      display: flex;
-    }
-  
-    .nav-links li {
-      margin-bottom: 1rem;
-    }
-  }
-  
+}
